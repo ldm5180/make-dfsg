@@ -59,6 +59,10 @@ struct file
     FILE_TIMESTAMP mtime_before_update; /* File's modtime before any updating
                                            has been performed.  */
     int command_flags;          /* Flags OR'd in for cmds; see commands.h.  */
+
+    char checksum[16];          /* Checksum of the file.  */
+    char last_checksum[16];     /* Last computed checksum of the file.  */
+
     enum update_status          /* Status of the last attempt to update.  */
       {
         us_success = 0,         /* Successfully updated.  Must be 0!  */
@@ -108,6 +112,9 @@ extern struct file *suffix_file, *default_file;
 
 struct file *lookup_file (const char *name);
 struct file *enter_file (const char *name);
+void compute_checksum(struct file *new, void * checksum);
+void read_checksum(struct file *new, void * checksum);
+void write_checksum(struct file *new);
 struct dep *split_prereqs (char *prereqstr);
 struct dep *enter_prereqs (struct dep *prereqs, const char *stem);
 void remove_intermediates (int sig);

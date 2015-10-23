@@ -228,6 +228,11 @@ unsigned int job_slots = 1;
 unsigned int default_job_slots = 1;
 static unsigned int master_job_slots = 0;
 
+/* Define if the checksum of a file should be considered.  */
+
+char * use_checksum = NULL;
+const char * default_checksum_location = ".";
+
 /* Value of job_slots that means no limit.  */
 
 static unsigned int inf_jobs = 0;
@@ -372,6 +377,9 @@ static const char *const usage[] =
     N_("\
   --trace                     Print tracing information.\n"),
     N_("\
+  -u=DIR, --use-checksum=DIR\n\
+                              Consider checksum of FILE and write it to DIR.\n"),
+    N_("\
   -v, --version               Print the version number of make and exit.\n"),
     N_("\
   -w, --print-directory       Print the current directory.\n"),
@@ -433,6 +441,8 @@ static const struct command_switch switches[] =
 #endif
     { 'o', filename, &old_files, 0, 0, 0, 0, 0, "old-file" },
     { 'O', string, &output_sync_option, 1, 1, 0, "target", 0, "output-sync" },
+    { 'u', string, &use_checksum, 1, 1, 1, &default_checksum_location,
+      &default_checksum_location, "use-checksum" },
     { 'W', filename, &new_files, 0, 0, 0, 0, 0, "what-if" },
 
     /* These are long-style options.  */
@@ -457,6 +467,7 @@ static struct option long_option_aliases[] =
     { "new-file",       required_argument,      0, 'W' },
     { "assume-new",     required_argument,      0, 'W' },
     { "assume-old",     required_argument,      0, 'o' },
+    { "use-checksum",   no_argument,            0, 'u' },
     { "max-load",       optional_argument,      0, 'l' },
     { "dry-run",        no_argument,            0, 'n' },
     { "recon",          no_argument,            0, 'n' },

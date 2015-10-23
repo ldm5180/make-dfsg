@@ -602,6 +602,8 @@ extern char *version_string, *remote_description, *make_host;
 
 extern unsigned int commands_started;
 
+extern char * use_checksum;
+
 extern int handling_fatal_signal;
 
 

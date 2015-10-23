@@ -833,6 +833,12 @@ update_file_1 (struct file *file, unsigned int depth)
       DBF (DB_VERBOSE, _("Recipe of '%s' is being run.\n"));
       return 0;
     }
+  else if (use_checksum && (file->update_status == us_success))
+    {
+      /* Write out the checksum as long as the update status is success.  */
+      compute_checksum (file, file->checksum);
+      write_checksum (file);
+    }
 
   switch (file->update_status)
     {
@@ -1019,8 +1025,57 @@ check_dep (struct file *file, unsigned int depth,
       check_renamed (file);
       mtime = file_mtime (file);
       check_renamed (file);
-      if (mtime == NONEXISTENT_MTIME || mtime > this_mtime)
-        *must_make_ptr = 1;
+      if (mtime == NONEXISTENT_MTIME)
+        {
+          *must_make_ptr = 1;
+        }
+      else if (mtime > this_mtime)
+        {
+          if (use_checksum && file->last_checksum)
+            {
+              /* Only remake when the checksum does not match the last one.
+                 This is purely an optimization.  */
+              compute_checksum (file, file->checksum);
+              if (0 != memcmp (file->checksum, file->last_checksum, 16))
+                {
+                  *must_make_ptr = 1;
+                }
+             }
+           else
+             {
+               *must_make_ptr = 1;
+             }
+ 
+           if (use_checksum)
+             {
+               /* Write the new checksum out.  */
+               if (!file->checksum)
+                 {
+                   compute_checksum (file, file->checksum);
+                 }
+               write_checksum (file);
+             }
+         }
+      else if (use_checksum && file->last_checksum)
+        {
+          /* The timestamp does not signify that a remake is required. Verify
+             using the checksum.  */
+          compute_checksum (file, file->checksum);
+          if (0 != memcmp (file->checksum, file->last_checksum, 16))
+            {
+              *must_make_ptr = 1;
+            }
+
+          if (use_checksum)
+            {
+              /* Write the new checksum out.  */
+              if (!file->checksum)
+                {
+                  compute_checksum (file, file->checksum);
+                }
+              write_checksum (file);
+            }
+        }
     }
   else
     {
@@ -1045,10 +1100,55 @@ check_dep (struct file *file, unsigned int depth,
       check_renamed (file);
       mtime = file_mtime (file);
       check_renamed (file);
-      if (mtime != NONEXISTENT_MTIME && mtime > this_mtime)
-        /* If the intermediate file actually exists and is newer, then we
-           should remake from it.  */
-        *must_make_ptr = 1;
+      if (mtime != NONEXISTENT_MTIME)
+        {
+          *must_make_ptr = 1;
+        }
+      else if(mtime > this_mtime)
+        {
+          if (use_checksum && file->last_checksum)
+            {
+              compute_checksum (file, file->checksum);
+              if (0 != memcmp (file->checksum, file->last_checksum, 16))
+                {
+                  *must_make_ptr = 1;
+                }
+            }
+          else
+            {
+              /* If the intermediate file actually exists and is newer, then
+                 we should remake from it.  */
+              *must_make_ptr = 1;
+            }
+          if (use_checksum)
+            {
+              if (!file->checksum)
+                {
+                  compute_checksum (file, file->checksum);
+                }
+              write_checksum (file);
+            }
+         }
+      else if (use_checksum && file->last_checksum)
+        {
+          /* The timestamp does not signify that a remake is required. Verify
+             using the checksum.  */
+          compute_checksum (file, file->checksum);
+          if (0 != memcmp (file->checksum, file->last_checksum, 16))
+            {
+              *must_make_ptr = 1;
+            }
+
+          if (use_checksum)
+            {
+              /* Write the new checksum out.  */
+              if (!file->checksum)
+                {
+                  compute_checksum (file, file->checksum);
+                }
+              write_checksum (file);
+            }
+        }
       else
         {
           /* Otherwise, update all non-intermediate files we depend on, if
